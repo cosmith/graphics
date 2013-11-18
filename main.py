@@ -3,16 +3,7 @@ from random import randint
 from vector import Vec
 import math
 
-SIZE = (500, 500)
-
-
-class Plane(Vec):
-    """
-    A plane is just a normal vector
-    """
-    def __init__(self, x, y, z):
-        return super(Plane, self).__init__(x, y, z)
-
+SIZE = (400, 400)
 
 class Camera:
 
@@ -21,7 +12,6 @@ class Camera:
         """
         self.position = position
         self.direction = direction / direction.length()
-        self.eye = self.position + self.direction
         self.subdivision = []
 
         self.image = image
@@ -46,7 +36,7 @@ class Camera:
     def subdivide(self):
         self.subdivision = []
 
-        center = self.eye + self.direction * 2
+        center = self.direction
 
         # vector defining the plane
         plane1 = Vec(-self.direction.y / self.direction.x, 1, 0)
@@ -59,11 +49,22 @@ class Camera:
         for x in r:
             for y in r:
                 # the position on the plane
-                pos = center + (plane1 * x) + (plane2 * y)
+                pos = (plane1 * x) + (plane2 * y)
                 # the vector pointing to the point on the grid
-                res = pos - self.eye
+                res = center + pos
+                # print res.cross(self.direction)
 
-                self.subdivision.append(res)
+                self.subdivision.append(self.trace(res))
+
+
+    def trace(self, vec):
+        """
+        Send a ray to infinity!
+        """
+        g = vec.cross(self.direction).length()
+        g = 255 - abs(int(g * 20))
+
+        return (g, g, g)
 
 
     def pixel(self, x, y):
@@ -76,20 +77,14 @@ class Camera:
         iy = int(float(y) / self.height * self.SUB_COUNT)
         index = self.SUB_COUNT * ix + iy
 
-        return self.trace(self.subdivision[index])
+        return self.subdivision[index]
 
-    def trace(self, vec):
-        """
-        Send a ray to infinity!
-        """
-        g = int(vec.dot(self.direction) * 100)
-        # if randint(0, 100) > 99: print g
-        return (g, g, g)
+
 
 
 canvas = Image.new("RGB", SIZE)
 
-c = Camera(Vec(0, 0, 0), Vec(1, 1, 1), canvas)
+c = Camera(Vec(1, 3, 0), Vec(2, 1, 1), canvas)
 c.capture()
 
 
