@@ -3,13 +3,25 @@ from random import randint
 from vector import Vec
 import math
 
-SIZE = (400, 400)
+SIZE = (640, 480)
+
+
+class Scene():
+
+    def __init__(self):
+        self.planes = []
+
+    def addplane(self, position, normal, color):
+        self.planes.append((position, normal, color))
+
 
 class Camera:
 
-    def __init__(self, position, direction, image):
+    def __init__(self, scene, position, direction, image):
         """
         """
+        self.scene = scene
+
         self.position = position
         self.direction = direction / direction.length()
         self.subdivision = []
@@ -17,7 +29,7 @@ class Camera:
         self.image = image
         self.width, self.height = image.size
 
-        self.SUB_COUNT = 10
+        self.SUB_COUNT = 100
 
 
     def __repr__(self):
@@ -46,13 +58,13 @@ class Camera:
         plane2 /= plane2.length()
 
         r = range(-self.SUB_COUNT/2, self.SUB_COUNT/2)
+        size = float(self.SUB_COUNT)
         for x in r:
             for y in r:
                 # the position on the plane
-                pos = (plane1 * x) + (plane2 * y)
+                pos = ((plane1 * x) + (plane2 * y)) / size
                 # the vector pointing to the point on the grid
                 res = center + pos
-                # print res.cross(self.direction)
 
                 self.subdivision.append(self.trace(res))
 
@@ -61,11 +73,18 @@ class Camera:
         """
         Send a ray to infinity!
         """
-        g = vec.cross(self.direction).length()
-        g = 255 - abs(int(g * 20))
+        for position, normal, color in self.scene.planes:
+            if normal.dot(vec) > 0:
+                # we hit a plane
+                g = normal.dot(vec) * 10
+                return self.normalize(color, g)
+            else:
+                # sky
+                return (170, 220, 240)
 
-        return (g, g, g)
 
+    def normalize(self, color, g):
+        return (abs(int(color[0]*g)), abs(int(color[1]*g)), abs(int(color[2]*g)))
 
     def pixel(self, x, y):
         """
@@ -84,7 +103,10 @@ class Camera:
 
 canvas = Image.new("RGB", SIZE)
 
-c = Camera(Vec(1, 3, 0), Vec(2, 1, 1), canvas)
+scene = Scene()
+scene.addplane(Vec(0, 0, 0), Vec(0, 0, 1), (40, 100, 50))
+
+c = Camera(scene, Vec(0, 0, 20), Vec(1, 1, 0), canvas)
 c.capture()
 
 
