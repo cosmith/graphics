@@ -29,7 +29,7 @@ class Camera:
         self.image = image
         self.width, self.height = image.size
 
-        self.SUB_COUNT = 100
+        self.SUB_COUNT = 400
 
 
     def __repr__(self):
@@ -65,6 +65,8 @@ class Camera:
                 pos = ((plane1 * x) + (plane2 * y)) / size
                 # the vector pointing to the point on the grid
                 res = center + pos
+                # normalize
+                res /= res.length()
 
                 self.subdivision.append(self.trace(res))
 
@@ -73,18 +75,28 @@ class Camera:
         """
         Send a ray to infinity!
         """
+        closest = 100000
+        picked_color = (170, 220, 240) # sky
+
         for position, normal, color in self.scene.planes:
-            if normal.dot(vec) > 0:
+            nv = normal.dot(vec)
+            if nv > 0:
                 # we hit a plane
-                g = normal.dot(vec) * 10
-                return self.normalize(color, g)
-            else:
-                # sky
-                return (170, 220, 240)
+                dist = abs(normal.dot(self.position - position) / nv)
+                if dist < closest:
+                    closest = dist
+                    picked_color = self.normalize(color, dist / 100)
+
+        # sky
+        return picked_color
 
 
     def normalize(self, color, g):
-        return (abs(int(color[0]*g)), abs(int(color[1]*g)), abs(int(color[2]*g)))
+        if g == 0:
+            return (255, 0, 0)
+
+        return (abs(int(color[0]/g)), abs(int(color[1]/g)), abs(int(color[2]/g)))
+
 
     def pixel(self, x, y):
         """
@@ -104,7 +116,8 @@ class Camera:
 canvas = Image.new("RGB", SIZE)
 
 scene = Scene()
-scene.addplane(Vec(0, 0, 0), Vec(0, 0, 1), (40, 100, 50))
+scene.addplane(Vec(0, 0, 1), Vec(0, 0, 1), (40, 100, 50))
+scene.addplane(Vec(100, 100, 10), Vec(0.4, 3, 5), (100, 50, 40))
 
 c = Camera(scene, Vec(0, 0, 20), Vec(1, 1, 0), canvas)
 c.capture()
