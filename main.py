@@ -3,16 +3,63 @@ from random import randint
 from vector import Vec
 import math
 
-SIZE = (640, 480)
+SIZE = (200, 200)
 
 
-class Scene():
-
+class Scene:
     def __init__(self):
-        self.planes = []
+        self.objects = []
 
-    def addplane(self, position, normal, color):
-        self.planes.append((position, normal, color))
+    def addobject(self, obj):
+        if not isinstance(obj, SceneObject):
+            raise TypeError()
+
+        self.objects.append(obj)
+
+
+class SceneObject:
+    def __init__(self):
+        pass
+
+    def distance(self, point, ray):
+        """
+        Return the distance between the object and the point
+        if following the vector ray
+        Return None if no intersection
+        """
+        pass
+
+
+class Plane(SceneObject):
+    def __init__(self, point, normal, color):
+        self.point = point
+        self.normal = normal
+        self.color = color
+
+    def distance(self, point, ray):
+        nv = self.normal.dot(ray)
+        if nv <= 0:
+            return None
+
+        # we hit the plane
+        return abs(self.normal.dot(point - self.point) / nv)
+
+
+class Sphere(SceneObject):
+    def __init__(self, center, radius, color):
+        self.center = center
+        self.radius = radius
+        self.color = color
+
+    def distance(self, point, ray):
+        pc = self.center - point # point to center vec
+        pc_ray = math.acos((pc/pc.length()).dot(ray)) # angle between ray and PC
+        max_angle = math.atan(self.radius / pc.length())
+
+        if pc_ray > max_angle:
+            return None
+
+        return 100.0
 
 
 class Camera:
@@ -29,7 +76,7 @@ class Camera:
         self.image = image
         self.width, self.height = image.size
 
-        self.SUB_COUNT = 400
+        self.SUB_COUNT = 100
 
 
     def __repr__(self):
@@ -71,29 +118,26 @@ class Camera:
                 self.subdivision.append(self.trace(res))
 
 
-    def trace(self, vec):
+    def trace(self, ray):
         """
         Send a ray to infinity!
         """
         closest = 100000
         picked_color = (170, 220, 240) # sky
 
-        for position, normal, color in self.scene.planes:
-            nv = normal.dot(vec)
-            if nv > 0:
-                # we hit a plane
-                dist = abs(normal.dot(self.position - position) / nv)
-                if dist < closest:
-                    closest = dist
-                    picked_color = self.normalize(color, dist / 100)
+        for obj in self.scene.objects:
+            dist = obj.distance(self.position, ray)
+            if dist and dist < closest:
+                closest = dist
+                picked_color = self.normalize(obj.color, dist / 100)
 
         # sky
         return picked_color
 
 
     def normalize(self, color, g):
-        if g == 0:
-            return (255, 0, 0)
+        if g == 0: # problem
+            return (randint(0,255), randint(0,255), randint(0,255))
 
         return (abs(int(color[0]/g)), abs(int(color[1]/g)), abs(int(color[2]/g)))
 
@@ -116,12 +160,18 @@ class Camera:
 canvas = Image.new("RGB", SIZE)
 
 scene = Scene()
-scene.addplane(Vec(0, 0, 1), Vec(0, 0, 1), (40, 100, 50))
-scene.addplane(Vec(100, 100, 10), Vec(0.4, 3, 5), (100, 50, 40))
+
+plane1 = Plane(Vec(0, 0, 1), Vec(0, 0, 1), (40, 100, 50))
+plane2 = Plane(Vec(100, 100, 10), Vec(0.4, 3, 5), (100, 50, 40))
+sphere1 = Sphere(Vec(5, 5, 20), 1, (10, 200, 10))
+sphere2 = Sphere(Vec(10, 20, 19), 1, (100, 20, 10))
+
+scene.addobject(plane1)
+# scene.addobject(plane2)
+scene.addobject(sphere1)
+scene.addobject(sphere2)
 
 c = Camera(scene, Vec(0, 0, 20), Vec(1, 1, 0), canvas)
 c.capture()
-
-
 
 canvas.show()
