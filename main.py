@@ -6,7 +6,7 @@ from vector import Vec
 import math
 import sys
 
-SIZE = (400, 400)
+SIZE = (500, 500)
 
 
 class Scene:
@@ -81,7 +81,7 @@ class Camera:
         self.image = image
         self.width, self.height = image.size
 
-        self.SUB_COUNT = 200
+        self.SUB_COUNT = 500
 
 
     def __repr__(self):
@@ -171,17 +171,22 @@ scene = Scene()
 
 plane1 = Plane(Vec(0, 0, 0), Vec(0, 0, 1), (40, 100, 50))
 plane2 = Plane(Vec(100, 100, 10), Vec(0.4, 3, 5), (100, 50, 40))
-sphere1 = Sphere(Vec(40, 30, 0), 10, (100, 10, 100))
-sphere2 = Sphere(Vec(20, 14, 0), 7, (100, 20, 10))
-sphere3 = Sphere(Vec(10, 30, 0), 10, (100, 10, 40))
+purple = Sphere(Vec(40, 30, 5), 10, (40, 10, 60))
+green = Sphere(Vec(20, 14, 0), 7, (10, 20, 10))
+pink = Sphere(Vec(14, 34, 0), 12, (50, 10, 40))
+blue = Sphere(Vec(18, 24, 5), 5, (10, 10, 60))
+red = Sphere(Vec(34, 10, 15), 15, (60, 10, 10))
 
 scene.addobject(plane1)
 
-scene.addobject(sphere1)
-scene.addobject(sphere2)
-scene.addobject(sphere3)
+scene.addobject(purple)
+scene.addobject(pink)
+scene.addobject(green)
+scene.addobject(blue)
+scene.addobject(red)
 
-c = Camera(scene, Vec(0, 0, 10), Vec(1, 1, -0.1), canvas)
+
+c = Camera(scene, Vec(0, 0, 11), Vec(1, 1, -0.2), canvas)
 c.capture()
 
 canvas.show()
