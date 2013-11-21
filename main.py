@@ -1,9 +1,12 @@
+#!/usr/bin/python
+
 from PIL import Image
 from random import randint
 from vector import Vec
 import math
+import sys
 
-SIZE = (200, 200)
+SIZE = (400, 400)
 
 
 class Scene:
@@ -38,7 +41,7 @@ class Plane(SceneObject):
 
     def distance(self, point, ray):
         nv = self.normal.dot(ray)
-        if nv <= 0:
+        if nv >= 0:
             return None
 
         # we hit the plane
@@ -53,13 +56,15 @@ class Sphere(SceneObject):
 
     def distance(self, point, ray):
         pc = self.center - point # point to center vec
-        pc_ray = math.acos((pc/pc.length()).dot(ray)) # angle between ray and PC
-        max_angle = math.atan(self.radius / pc.length())
+        pc_ray = pc.dot(ray)
+        ACsinalpha2 = pc.length()**2 - pc_ray**2
 
-        if pc_ray > max_angle:
-            return None
+        if self.radius**2 - ACsinalpha2 > 0:
+            dist = pc_ray - math.sqrt(self.radius**2 - ACsinalpha2)
+        else:
+            dist = None
 
-        return 100.0
+        return dist
 
 
 class Camera:
@@ -76,11 +81,11 @@ class Camera:
         self.image = image
         self.width, self.height = image.size
 
-        self.SUB_COUNT = 100
+        self.SUB_COUNT = 200
 
 
     def __repr__(self):
-        return("%s %s %s" % (self.position, self.direction, [x for x in dir(self) if x[0] != '_']))
+        return "%s %s" % (self.position, self.direction)
 
 
     def capture(self):
@@ -99,7 +104,7 @@ class Camera:
 
         # vector defining the plane
         plane1 = Vec(-self.direction.y / self.direction.x, 1, 0)
-        plane2 = Vec(-self.direction.z / self.direction.x, 0, 1)
+        plane2 = Vec(-self.direction.z / self.direction.x, 0, -1)
 
         plane1 /= plane1.length()
         plane2 /= plane2.length()
@@ -107,6 +112,9 @@ class Camera:
         r = range(-self.SUB_COUNT/2, self.SUB_COUNT/2)
         size = float(self.SUB_COUNT)
         for x in r:
+            if x % 10 == 0:
+                print "\r%s%%" % int((x + size/2) / size * 100),
+                sys.stdout.flush()
             for y in r:
                 # the position on the plane
                 pos = ((plane1 * x) + (plane2 * y)) / size
@@ -161,17 +169,19 @@ canvas = Image.new("RGB", SIZE)
 
 scene = Scene()
 
-plane1 = Plane(Vec(0, 0, 1), Vec(0, 0, 1), (40, 100, 50))
+plane1 = Plane(Vec(0, 0, 0), Vec(0, 0, 1), (40, 100, 50))
 plane2 = Plane(Vec(100, 100, 10), Vec(0.4, 3, 5), (100, 50, 40))
-sphere1 = Sphere(Vec(5, 5, 20), 1, (10, 200, 10))
-sphere2 = Sphere(Vec(10, 20, 19), 1, (100, 20, 10))
+sphere1 = Sphere(Vec(40, 30, 0), 10, (100, 10, 100))
+sphere2 = Sphere(Vec(20, 14, 0), 7, (100, 20, 10))
+sphere3 = Sphere(Vec(10, 30, 0), 10, (100, 10, 40))
 
 scene.addobject(plane1)
-# scene.addobject(plane2)
+
 scene.addobject(sphere1)
 scene.addobject(sphere2)
+scene.addobject(sphere3)
 
-c = Camera(scene, Vec(0, 0, 20), Vec(1, 1, 0), canvas)
+c = Camera(scene, Vec(0, 0, 10), Vec(1, 1, -0.1), canvas)
 c.capture()
 
 canvas.show()
